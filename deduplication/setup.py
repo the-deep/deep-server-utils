@@ -1,12 +1,12 @@
-from setuptools import setup, find_packages
+from setuptools import setup, find_namespace_packages
 
 setup(
     name='deep_utils.deduplication',
-    version='1.0.2',
+    version='1.0.3',
     description='Document deduplication package for DEEP',
     author='Bibek Pandey',
     author_email='bibek.pandey@togglecorp.com',
-    packages=find_packages(),
+    packages=find_namespace_packages(),
     license="MIT",
     long_description_content_type='text/markdown',
     long_description=open('./README.md').read(),
