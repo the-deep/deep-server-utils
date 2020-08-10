@@ -1,0 +1,8 @@
+.mypy_cache/
+*.data
+*.pyc
+*.swo
+*.swp
+dist/
+*.egg-info/
+*.whl
