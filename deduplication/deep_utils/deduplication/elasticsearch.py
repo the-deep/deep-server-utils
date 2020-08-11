@@ -44,14 +44,14 @@ def add_to_index_bulk(doc_ids: List[int], vectors: List[VectorDict], index_name:
     return es_bulk(index_name, data)
 
 
-def search_similar(size: int, vector: Tuple[str, List[float]], index_name: str, es: Es):
+def search_similar(similar_count: int, vector: Tuple[str, List[float]], index_name: str, es: Es):
     query = {
-        "size": size,
+        "size": similar_count,
         "query": {
             "knn": {
                 vector[0]: {
                     "vector": vector[1],
-                    "k": size
+                    "k": similar_count
                 }
             }
         }
