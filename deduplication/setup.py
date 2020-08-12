@@ -2,7 +2,7 @@ from setuptools import setup, find_namespace_packages
 
 setup(
     name='deep_utils.deduplication',
-    version='1.0.4',
+    version='1.0.5',
     description='Document deduplication package for DEEP',
     long_description_content_type='text/markdown',
     long_description=open('./README.md').read(),

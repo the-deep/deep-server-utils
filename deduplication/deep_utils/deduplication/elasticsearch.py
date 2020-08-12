@@ -1,12 +1,22 @@
 import json
-from typing import List, Dict, Tuple, NewType
+from typing import List, Dict, Tuple, NewType, Optional
 from functools import reduce
 
 from elasticsearch import Elasticsearch as Es
+from elasticsearch.exceptions import RequestError
 
-from .utils import es_wrapper
+import logging
+
+logger = logging.getLogger(__name__)
 
 VectorDict = NewType('VectorDict', Dict[str, List[float]])
+ErrorString = Optional[str]
+
+
+class IndexAlreadyExists(Exception):
+    def __init__(self, index_name, *args, **kwargs):
+        return super().__init__(f'The index "{index_name}" already exists')
+
 
 # Filter response data attributes
 FILTER_PATH = ['hits.hits._score', 'hits.hits._id', 'hits.hits._source', 'hits.total', 'hits.max_score']
@@ -19,7 +29,7 @@ def create_data(doc_id: int, vectors: Dict[str, List[float]], index_name: str):
     return data
 
 
-def es_bulk(index_name: str, data: List[Dict]) -> Tuple[bool, str]:
+def es_bulk(index_name: str, data: List[Dict], es: Es) -> Tuple[bool, str]:
     response = es.bulk(index=index_name, body=data)
     if response['errors']:
         return False, response['items'] and response['items'][0]['index']['error']['caused_by']['reason']
@@ -28,8 +38,7 @@ def es_bulk(index_name: str, data: List[Dict]) -> Tuple[bool, str]:
 
 def add_to_index(doc_id: int, vectors: VectorDict, index_name: str, es: Es):
     data = create_data(doc_id, vectors, index_name)
-    print(json.dumps(data, indent=4))
-    return es_bulk(index_name, data)
+    return es_bulk(index_name, data, es)
 
 
 def add_to_index_bulk(doc_ids: List[int], vectors: List[VectorDict], index_name: str, es: Es) -> Tuple[bool, str]:
@@ -41,7 +50,7 @@ def add_to_index_bulk(doc_ids: List[int], vectors: List[VectorDict], index_name:
         zip(doc_ids, vectors),
         []
     )
-    return es_bulk(index_name, data)
+    return es_bulk(index_name, data, es)
 
 
 def search_similar(similar_count: int, vector: Tuple[str, List[float]], index_name: str, es: Es):
@@ -59,19 +68,50 @@ def search_similar(similar_count: int, vector: Tuple[str, List[float]], index_na
     return es.search(body=query, index=index_name, filter_path=FILTER_PATH)
 
 
-if __name__ == '__main__':
-    import random
-    index_name = "en-test-index"
-    es = es_wrapper(
-        endpoint='https://search-deep-dev-7yt6m5ulk7irae7vgbgu3ueafe.us-east-1.es.amazonaws.com',
-        region='us-east-1',
-        profile_name='dfs-es'
+def index_exists(index_name: str, es: Es) -> bool:
+    """
+    Checks if index named `index_name` exists
+    """
+    return es.indices.exists(index_name)
+
+
+def create_knn_vector_index_if_not_exists(
+        index_name: str, vector_size: int, es: Es
+        ) -> Tuple[bool, ErrorString]:
+    return create_knn_vector_index(index_name, vector_size, es, ignore_error=True)
+
+
+def create_knn_vector_index(
+        index_name: str, vector_size: int, es: Es, ignore_error: bool = False
+        ) -> Tuple[bool, ErrorString]:
+    """
+    Create knn vector index with given `index_name` and `vector_size`.
+    The vector name will be `vector1`
+    """
+    if es.indices.exists(index_name):
+        if ignore_error:
+            return True, None
+        return False, f"The index '{index_name}' already exists"
+
+    properties = dict(
+        vector1=dict(
+            type="knn_vector",
+            dimension=vector_size
+        )
     )
-    bulk_size = 50
-    rangedata = range(bulk_size)
-    vecs = [{'vector1': [random.randrange(50) for _ in range(5)]} for _ in rangedata]
-    # resp = add_to_index_bulk([x + 1. for x in rangedata], vecs, index_name, es)
-    search_param = ('vector1', [10, 22, 47, 46, 47])
-    # search_param = None
-    resp = search_similar(5, search_param, index_name, es)
-    print(resp)
+    data = dict(
+        settings={"index.knn": True},
+        mappings=dict(
+            properties=properties
+        )
+    )
+
+    try:
+        es.indices.create(index_name, body=data)
+        return True, None
+    except RequestError as e:
+        if e.args[1] == 'resource_already_exists_exception':
+            return False, f"The index '{index_name}' already exists"
+        reason = e.args[2]['error']['root_cause'][0]['reason']
+        logger.warning(reason)
+        return False, reason

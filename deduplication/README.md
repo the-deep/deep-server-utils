@@ -76,3 +76,12 @@ search_similar(similar_count: int, vector: Tuple[str, List[float]], index_name: 
 ```python
 add_to_index(doc_id: int, vectors: Dict[str, List[float]], index_name: str, es: Elasticsearch)
 ```
+```python
+index_exists(index_name: str, es: Es) -> bool
+```
+```python
+create_knn_vector_index(index_name: str, vector_size: int, es: Es, ignore_error: bool = False) -> Tuple[bool, ErrorString]
+```
+```python
+create_knn_vector_index_if_not_exists(index_name: str, vector_size: int, es: Es) -> Tuple[bool, ErrorString]
+```
