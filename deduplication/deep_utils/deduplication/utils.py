@@ -7,7 +7,7 @@ from elasticsearch import Elasticsearch as ES, RequestsHttpConnection
 PUNC_TRANS_TABLE = str.maketrans({x: ' ' for x in string.punctuation})
 
 
-def es_wrapper(endpoint: str, region: str, profile_name: str = 'default'):
+def es_wrapper(endpoint: str, region: str = 'us-east-1', profile_name: str = 'default'):
     """
     Wrapper function for Elasticsearch
     """

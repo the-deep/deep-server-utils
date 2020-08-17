@@ -7,6 +7,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+SUPPORTED_LANGUAGES = ['en', 'es', 'fr']
+
 EN_TRIGRAMS = {t: i for i, t in enumerate(en.trigrams)}
 ES_TRIGRAMS = {t: i for i, t in enumerate(es.trigrams)}
 FR_TRIGRAMS = {t: i for i, t in enumerate(fr.trigrams)}
@@ -45,14 +47,15 @@ def normalize_count_vector(count_vector: List[int]) -> List[float]:
 
 def create_trigram_vector(lang: str, text: str) -> List[float]:
     trigrams = None
+    if lang not in SUPPORTED_LANGUAGES:
+        raise InvalidLanguage(f'Invalid lanaguage "{lang}" to process trigrams')
+
     if lang == 'en':
         trigrams = EN_TRIGRAMS
     elif lang == 'es':
         trigrams = ES_TRIGRAMS
     elif lang == 'fr':
         trigrams = FR_TRIGRAMS
-    else:
-        raise InvalidLanguage(f'Invalid lanaguage "{lang}" to process trigrams')
 
     if not trigrams:
         raise TrigramsNotLoaded(f'Trigrams for language "{lang}" are not loaded.')
