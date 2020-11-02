@@ -1,3 +1,4 @@
+from typing import Optional
 import string
 
 from requests_aws4auth import AWS4Auth
@@ -7,7 +8,7 @@ from elasticsearch import Elasticsearch as ES, RequestsHttpConnection
 PUNC_TRANS_TABLE = str.maketrans({x: ' ' for x in string.punctuation})
 
 
-def es_wrapper(endpoint: str, region: str = 'us-east-1', profile_name: str = 'default'):
+def es_wrapper(endpoint: str, region: str = 'us-east-1', profile_name: Optional[str] = None):
     """
     Wrapper function for Elasticsearch
     """
