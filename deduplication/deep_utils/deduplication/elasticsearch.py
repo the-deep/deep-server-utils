@@ -5,6 +5,7 @@ from functools import reduce
 from elasticsearch import Elasticsearch as Es
 from elasticsearch.exceptions import RequestError
 
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -100,7 +101,7 @@ def create_knn_vector_index(
         )
     )
     data = dict(
-        settings={"index.knn": True},
+        settings={"index": {"knn": True, "knn.space_type": "cosinesimil"}},
         mappings=dict(
             properties=properties
         )
